@@ -3,6 +3,8 @@ import { getTasks, getOverdueTasks } from "@/lib/data/tasks";
 import { getDocuments } from "@/lib/data/documents";
 import { DashboardClient } from "./dashboard-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   // Fetch all data in parallel
   const [projects, tasks, documents, overdueTasks] = await Promise.all([

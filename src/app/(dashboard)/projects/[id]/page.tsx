@@ -4,6 +4,8 @@ import { getTasks } from "@/lib/data/tasks";
 import { getDocuments } from "@/lib/data/documents";
 import { ProjectDetailClient } from "./project-detail-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectDetailPage({
   params,
 }: {

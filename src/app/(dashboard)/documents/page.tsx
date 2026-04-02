@@ -2,6 +2,8 @@ import { getDocuments } from "@/lib/data/documents";
 import { mockProjects } from "@/lib/mock-data";
 import { DocumentsPageClient } from "./documents-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DocumentsPage() {
   const documents = await getDocuments();
 
