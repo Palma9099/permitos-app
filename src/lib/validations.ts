@@ -127,10 +127,40 @@ export const documentTypeValues = [
   "OTHER",
 ] as const;
 
+export const documentStatusValues = [
+  "DRAFT",
+  "PENDING_REVIEW",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+export const documentStatusLabels: Record<string, string> = {
+  DRAFT: "Draft",
+  PENDING_REVIEW: "Pending Review",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+export const requiredDocumentsByPermitType: Record<string, string[]> = {
+  BUILDING: [
+    "PLANS",
+    "CALCULATIONS",
+    "SURVEY",
+    "NOC",
+    "PRODUCT_APPROVAL",
+    "APPLICATION",
+  ],
+  ELECTRICAL: ["PLANS", "CALCULATIONS", "APPLICATION"],
+  MECHANICAL: ["PLANS", "CALCULATIONS", "APPLICATION"],
+  PLUMBING: ["PLANS", "APPLICATION"],
+  ROOFING: ["PLANS", "PRODUCT_APPROVAL", "NOC", "APPLICATION"],
+};
+
 export const createDocumentSchema = z.object({
   name: z.string().min(1, "Document name is required"),
   type: z.enum(documentTypeValues).default("OTHER"),
   projectId: z.string(),
+  status: z.enum(documentStatusValues).default("DRAFT"),
   url: z.string().url().optional(),
   size: z.number().optional(),
   mimeType: z.string().optional(),
