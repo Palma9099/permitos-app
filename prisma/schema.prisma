@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // For Vercel Postgres pooled connections
+  directUrl = env("DATABASE_URL_UNPOOLED") // Neon unpooled connection for migrations
 }
 
 // ─── Auth & Organization ───────────────────────────────────
