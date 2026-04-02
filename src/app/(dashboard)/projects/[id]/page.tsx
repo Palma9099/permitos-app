@@ -1,36 +1,30 @@
-"use client";
+import { notFound } from "next/navigation";
+import { getProjectById, getProjectPermits } from "@/lib/data/projects";
+import { getTasks } from "@/lib/data/tasks";
+import { getDocuments } from "@/lib/data/documents";
+import { ProjectDetailClient } from "./project-detail-client";
 
-import React from "react";
-import { ProjectDetailHeader } from "@/components/projects/project-detail-header";
-import { ProjectDetailTabs } from "@/components/projects/project-detail-tabs";
-import { mockProjects } from "@/lib/mock-data";
+export default async function ProjectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const project = await getProjectById(id);
+  if (!project) notFound();
 
-interface ProjectDetailPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  const project = mockProjects.find((p) => p.id === params.id);
-
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Project not found</h1>
-          <p className="text-muted-foreground">
-            The project you're looking for doesn't exist or has been deleted.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const [tasks, documents, permits] = await Promise.all([
+    getTasks({ projectId: id }),
+    getDocuments({ projectId: id }),
+    getProjectPermits(id),
+  ]);
 
   return (
-    <div className="flex flex-col bg-background">
-      <ProjectDetailHeader project={project} />
-      <ProjectDetailTabs project={project} />
-    </div>
+    <ProjectDetailClient
+      project={project}
+      tasks={tasks}
+      documents={documents}
+      permits={permits}
+    />
   );
 }

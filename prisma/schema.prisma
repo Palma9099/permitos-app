@@ -1,0 +1,253 @@
+// PermitOS — Prisma Schema
+// Run: npx prisma migrate dev --name init
+// Run: npx prisma generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For Vercel Postgres pooled connections
+}
+
+// ─── Auth & Organization ───────────────────────────────────
+
+model User {
+  id             String       @id @default(cuid())
+  clerkId        String       @unique
+  email          String       @unique
+  firstName      String?
+  lastName       String?
+  avatarUrl      String?
+  role           UserRole     @default(MEMBER)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  assignedProjects Project[]  @relation("ProjectAssignee")
+  assignedTasks    Task[]     @relation("TaskAssignee")
+  createdTasks     Task[]     @relation("TaskCreator")
+  uploadedDocs     Document[] @relation("DocumentUploader")
+  comments         Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([organizationId])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+model Organization {
+  id       String  @id @default(cuid())
+  clerkId  String? @unique // Clerk org ID if using Clerk Organizations
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+
+  users    User[]
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Projects ──────────────────────────────────────────────
+
+model Project {
+  id             String        @id @default(cuid())
+  name           String
+  address        String
+  city           String?
+  state          String        @default("FL")
+  zip            String?
+  jurisdiction   String
+  status         ProjectStatus @default(INTAKE)
+  permitType     PermitType    @default(BUILDING)
+  value          Float?
+  progress       Float         @default(0)
+  commentRounds  Int           @default(0)
+  description    String?
+  notes          String?
+
+  assigneeId     String?
+  assignee       User?         @relation("ProjectAssignee", fields: [assigneeId], references: [id])
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+
+  permits   Permit[]
+  tasks     Task[]
+  documents Document[]
+  comments  Comment[]
+
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([assigneeId])
+}
+
+enum ProjectStatus {
+  INTAKE
+  DRAFTING
+  INTERNAL_REVIEW
+  SUBMITTED
+  IN_REVIEW
+  REVISION
+  APPROVED
+  ISSUED
+  CLOSED
+}
+
+enum PermitType {
+  BUILDING
+  ELECTRICAL
+  MECHANICAL
+  PLUMBING
+  ROOFING
+  DEMOLITION
+  FENCE
+  FIRE
+  SITE_WORK
+  OTHER
+}
+
+// ─── Permits ───────────────────────────────────────────────
+
+model Permit {
+  id           String       @id @default(cuid())
+  projectId    String
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  permitNumber String?
+  type         PermitType
+  status       PermitStatus @default(PENDING)
+  fees         Float?
+  notes        String?
+
+  submittedAt  DateTime?
+  approvedAt   DateTime?
+  issuedAt     DateTime?
+  expiresAt    DateTime?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum PermitStatus {
+  PENDING
+  SUBMITTED
+  IN_REVIEW
+  CORRECTIONS_REQUIRED
+  APPROVED
+  ISSUED
+  EXPIRED
+  DENIED
+  WITHDRAWN
+}
+
+// ─── Tasks ─────────────────────────────────────────────────
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdById String?
+  createdBy   User?        @relation("TaskCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ─── Documents ─────────────────────────────────────────────
+
+model Document {
+  id           String       @id @default(cuid())
+  name         String
+  type         DocumentType @default(OTHER)
+  url          String?      // S3/R2 URL once uploaded
+  key          String?      // S3/R2 object key
+  size         Int?         // bytes
+  mimeType     String?
+  version      Int          @default(1)
+
+  projectId    String
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedById String?
+  uploadedBy   User?        @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+}
+
+enum DocumentType {
+  PLANS
+  CALCULATIONS
+  SURVEY
+  NOC
+  PRODUCT_APPROVAL
+  APPLICATION
+  COMMENT_LETTER
+  REVISION
+  PHOTO
+  CONTRACT
+  REPORT
+  OTHER
+}
+
+// ─── Comments / Activity ───────────────────────────────────
+
+model Comment {
+  id        String  @id @default(cuid())
+  body      String
+  authorId  String
+  author    User    @relation(fields: [authorId], references: [id])
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}

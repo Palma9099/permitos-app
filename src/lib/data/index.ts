@@ -13,6 +13,7 @@ export {
   getProjectById,
   getProjectPermits,
   getProjectCount,
+  getProjectsByStatus,
   type ProjectFilters,
 } from "./projects";
 
@@ -25,6 +26,14 @@ export {
   getTasksByStatus,
   type TaskFilters,
 } from "./tasks";
+
+// Documents
+export {
+  getDocuments,
+  getDocumentById,
+  getDocumentCount,
+  type DocumentFilters,
+} from "./documents";
 
 // Dashboard
 export {
