@@ -200,25 +200,34 @@ enum TaskPriority {
 // ─── Documents ─────────────────────────────────────────────
 
 model Document {
-  id           String       @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
-  type         DocumentType @default(OTHER)
-  url          String?      // S3/R2 URL once uploaded
-  key          String?      // S3/R2 object key
-  size         Int?         // bytes
+  type         DocumentType   @default(OTHER)
+  status       DocumentStatus @default(DRAFT)
+  url          String?        // S3/R2 URL once uploaded
+  key          String?        // S3/R2 object key
+  size         Int?           // bytes
   mimeType     String?
-  version      Int          @default(1)
+  version      Int            @default(1)
 
   projectId    String
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploadedById String?
-  uploadedBy   User?        @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  uploadedBy   User?          @relation("DocumentUploader", fields: [uploadedById], references: [id])
 
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([projectId])
   @@index([type])
+  @@index([status])
+}
+
+enum DocumentStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 enum DocumentType {

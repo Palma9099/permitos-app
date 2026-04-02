@@ -69,6 +69,7 @@ export async function getProjects(filters?: ProjectFilters) {
   }
 
   const where: any = {};
+  // Organization isolation — always scope to org when provided
   if (filters?.organizationId) where.organizationId = filters.organizationId;
   if (filters?.search) {
     where.OR = [
